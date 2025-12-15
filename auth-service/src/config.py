@@ -1,21 +1,23 @@
 import os
 from dotenv import load_dotenv
 
-# Charger les variables d'environnement du fichier .env
 load_dotenv()
 
 
-# Classe de configuration Flask/Mongo
 class Config:
+    # Clé secrète de l'application
     SECRET_KEY = os.getenv("SECRET_KEY")
+
+    # Paramètres MongoDB
     MONGO_INITDB_ROOT_USERNAME = os.getenv("MONGO_INITDB_ROOT_USERNAME")
     MONGO_INITDB_ROOT_PASSWORD = os.getenv("MONGO_INITDB_ROOT_PASSWORD")
     MONGO_DB = os.getenv("MONGO_DB")
-    MONGO_USER = os.getenv("MONGO_USER")
-    MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
-    MONGO_PORT = os.getenv("MONGO_PORT")
-    MONGO_HOST = os.getenv("MONGO_HOST")
-    # URI MongoDB pour Flask-PyMongo ou MongoClient
+    MONGO_USER = os.getenv("MONGO_USER", "admin")
+    MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", "adminpass")
+    MONGO_PORT = os.getenv("MONGO_PORT", "27017")
+    MONGO_HOST = os.getenv("MONGO_HOST", "auth_bdd")
+
+    # Construction de l'URI complète
     MONGO_URI = f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_HOST}:{MONGO_PORT}/{MONGO_DB}?authSource=admin"
 
     # Config Mongo Express (optionnel)
