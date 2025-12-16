@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ms-cinema-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+
+  catalog:
+    build: ./services/catalog
+    container_name: ms-cinema-catalog
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: catalog_db
+      DB_USER: catalog_user
+      DB_PASSWORD: catalog_pass
+    ports:
+      - "4001:4001"
+
+  auth:
+    build: ./services/auth
+    container_name: ms-cinema-auth
+    depends_on:
+      - postgres
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: auth_db
+      DB_USER: auth_user
+      DB_PASSWORD: auth_pass
+    ports:
+      - "4002:4002"
+
+  booking:
+    build: ./services/booking
+    container_name: ms-cinema-booking
+    depends_on:
+      - postgres
+    environment:
+      APP_PORT: "4003"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: booking_db
+      DB_USER: booking_user
+      DB_PASSWORD: booking_pass
+    ports:
+      - "4003:4003"
+
+  admin:
+    build: ./services/admin
+    container_name: ms-cinema-admin
+    environment:
+      APP_PORT: "4010"
+      ALLOWED_SERVICES: "catalog:ms-cinema-catalog,auth:ms-cinema-auth,booking:ms-cinema-booking,postgres:ms-cinema-postgres"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "4010:4010"
+
+  front:
+    build: ./front
+    container_name: ms-cinema-front
+    environment:
+      VITE_API_BASE: ""
+    ports:
+      - "3000:3000"
+
+volumes:
+  pg_data:
