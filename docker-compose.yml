@@ -83,28 +83,12 @@ services:
     ports:
       - "4003:4003"
 
-  seance:
-    build: ./services/seance
-    container_name: ms-cinema-seance
-    depends_on:
-      - postgres
-    environment:
-      PORT: "4004"
-      APP_PORT: "4004"
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: seance_db
-      DB_USER: seance_user
-      DB_PASSWORD: seance_pass
-    ports:
-      - "4004:4004"
-
   admin:
     build: ./services/admin
     container_name: ms-cinema-admin
     environment:
       APP_PORT: "4010"
-      ALLOWED_SERVICES: "catalog:ms-cinema-catalog,auth:ms-cinema-auth,booking:ms-cinema-booking,seance:ms-cinema-seance,postgres:ms-cinema-postgres,auth_api:auth_api"
+      ALLOWED_SERVICES: "catalog:ms-cinema-catalog,auth:ms-cinema-auth,booking:ms-cinema-booking,postgres:ms-cinema-postgres"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
