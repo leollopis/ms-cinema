@@ -22,7 +22,8 @@ def create_app(config_class=Config):
 
     # 1. Configuration base de données
     client = MongoClient(app.config["MONGO_URI"])
-    app.db = client.get_default_database()
+    db_name = app.config["MONGO_DB"]
+    app.db = client[db_name]
 
     # Permettre de stocker les JWT révoqués & supprimer automatiquement après expiration
     try:
@@ -59,8 +60,6 @@ def create_app(config_class=Config):
         if not jti:
             return False
         return bool(app.db.jwt_blocklist.find_one({"jti": jti}))
-
-    # Prolongation automatique du JWT : si une requête contient un JWT valide
     @app.after_request
     def refresh_jwt(response):
         try:
