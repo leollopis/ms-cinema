@@ -16,6 +16,7 @@ from src.services.validation_service import (
 )
 from src.services.user_service import serialize_user, update_last_login
 from src.services.auth_utils import revoke_token
+from datetime import datetime
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -152,11 +153,17 @@ def update_me():
     # Champs que l'utilisateur peut mettre à jour lui-même
     allowed = {"first_name", "last_name", "password"}
     updates = {k: v for k, v in data.items() if k in allowed}
+    password_changed = False
+    if "password" in updates:
+        from werkzeug.security import generate_password_hash
+
+        updates["password"] = generate_password_hash(updates["password"])
+        password_changed = True
 
     if not updates:
         return jsonify({"error": "Aucun champ modifiable fourni"}), 400
 
-    updates["updated_at"] = current_app.db.client.server_info().get("localTime")
+    updates["updated_at"] = datetime.utcnow()
 
     try:
         res = users_col.update_one({"_id": ObjectId(identity)}, {"$set": updates})
@@ -172,4 +179,19 @@ def update_me():
     except Exception:
         serialized = None
 
+    # Si le mot de passe a été modifié, révoquer le token courant
+    if password_changed:
+        from flask_jwt_extended import get_jwt
+        from src.services.auth_utils import revoke_token
+
+        revoke_token(current_app.db, get_jwt())
+        return (
+            jsonify(
+                {
+                    "message": "Mot de passe modifié, veuillez vous reconnecter.",
+                    "user": serialized,
+                }
+            ),
+            401,
+        )
     return jsonify({"message": "Profil mis à jour", "user": serialized}), 200
