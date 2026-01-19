@@ -13,6 +13,8 @@ services:
       - MONGO_HOST=auth_bdd
     ports:
       - "4002:5000"
+    volumes:
+      - ./services/auth:/app
     depends_on:
       - auth_bdd
 

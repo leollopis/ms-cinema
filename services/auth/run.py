@@ -1,3 +1,8 @@
+from generate_key import ensure_env_and_keys
+
+# Ensure .env and keys exist before verifying/loading config
+ensure_env_and_keys()
+
 from src import create_app
 
 app = create_app()
