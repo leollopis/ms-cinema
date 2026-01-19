@@ -1,4 +1,45 @@
+version: "3.8"
+name: ms-cinema
+
 services:
+  auth_api:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    container_name: auth_api
+    env_file:
+      - ./services/auth/.env
+    environment:
+      - MONGO_HOST=auth_bdd
+    ports:
+      - "4002:5000"
+    volumes:
+      - ./services/auth:/app
+    depends_on:
+      - auth_bdd
+
+  auth_bdd:
+    image: mongo:6.0
+    container_name: auth_bdd
+    restart: always
+    env_file:
+      - ./services/auth/.env
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: mongo-express
+    restart: always
+    env_file:
+      - ./services/auth/.env
+    ports:
+      - "8082:8081"
+    depends_on:
+      - auth_bdd
+
   postgres:
     image: postgres:16-alpine
     container_name: ms-cinema-postgres
@@ -25,19 +66,7 @@ services:
     ports:
       - "4001:4001"
 
-  auth:
-    build: ./services/auth
-    container_name: ms-cinema-auth
-    depends_on:
-      - postgres
-    environment:
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: auth_db
-      DB_USER: auth_user
-      DB_PASSWORD: auth_pass
-    ports:
-      - "4002:4002"
+
 
   booking:
     build: ./services/booking
@@ -75,7 +104,7 @@ services:
     container_name: ms-cinema-admin
     environment:
       APP_PORT: "4010"
-      ALLOWED_SERVICES: "catalog:ms-cinema-catalog,auth:ms-cinema-auth,booking:ms-cinema-booking,seance:ms-cinema-seance,postgres:ms-cinema-postgres"
+      ALLOWED_SERVICES: "catalog:ms-cinema-catalog,auth:ms-cinema-auth,booking:ms-cinema-booking,seance:ms-cinema-seance,postgres:ms-cinema-postgres,auth_api:auth_api"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
@@ -91,3 +120,4 @@ services:
 
 volumes:
   pg_data:
+  mongo_data:
