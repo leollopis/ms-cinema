@@ -1,6 +1,0 @@
-Flask
-python-dotenv
-pymongo
-flask_jwt_extended
-flask_login
-datetime

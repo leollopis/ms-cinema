@@ -79,7 +79,9 @@ def create_app(config_class=Config):
 
     # 4. Import et Enregistrement des Blueprints (Routes)
     from src.routes.auth_routes import auth_bp
+    from src.routes.misc_routes import misc_bp
     
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(misc_bp)
 
     return app
