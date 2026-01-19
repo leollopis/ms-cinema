@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "ms-cinema",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
