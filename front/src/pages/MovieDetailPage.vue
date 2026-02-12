@@ -16,7 +16,7 @@
       <section class="relative h-[30vh] overflow-hidden">
         <div class="absolute inset-0">
           <div class="w-full h-full bg-cover bg-center opacity-30" 
-              :style="{ backgroundImage: `url('${movie.poster}')` }">
+              :style="{ backgroundImage: `url('${movie.image}')` }">
           </div>
           <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent"></div>
           <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
@@ -92,7 +92,7 @@
           <h2 class="text-2xl font-semibold mb-4">Films similaires</h2>
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             <div v-for="similar in similarMovies" :key="similar.id" @click="goToMovie(similar.id)" class="group cursor-pointer">
-              <div class="relative aspect-[2/3] rounded overflow-hidden bg-cover bg-center" :style="{ backgroundImage: `url('${similar.poster}')` }">
+              <div class="relative aspect-[2/3] rounded overflow-hidden bg-cover bg-center" :style="{ backgroundImage: `url('${similar.image}')` }">
                 <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2 md:p-3">
                   <h3 class="font-semibold text-sm mb-1">{{ similar.title }}</h3>
                   <p class="text-xs text-slate-300">{{ similar.genre }}</p>

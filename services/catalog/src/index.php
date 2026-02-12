@@ -1,92 +1,98 @@
 <?php
-declare(strict_types=1);
+/**
+ * Catalog Microservice - Core helpers
+ * Database connection + utility functions
+ */
 
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-
-$send = static function (int $status, mixed $payload): void {
-    http_response_code($status);
-    $normalized = is_array($payload) ? $payload : ['message' => (string) $payload];
-    echo json_encode($normalized, JSON_PRETTY_PRINT);
-};
-
-$dbConfig = [
-    'host' => getenv('DB_HOST') ?: 'postgres',
-    'port' => getenv('DB_PORT') ?: '5432',
-    'dbname' => getenv('DB_NAME') ?: 'catalog_db',
-    'user' => getenv('DB_USER') ?: 'catalog_user',
-    'password' => getenv('DB_PASSWORD') ?: 'catalog_pass',
-];
-
-$dbTest = static function () use ($dbConfig): array {
-    $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $dbConfig['host'], $dbConfig['port'], $dbConfig['dbname']);
-    try {
-        $pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['password'], [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
-        $row = $pdo->query('SELECT current_database() AS db, current_user AS user')->fetch();
-        return [
-            'status' => 'ok',
-            'db' => $row['db'] ?? null,
-            'user' => $row['user'] ?? null,
-        ];
-    } catch (Throwable $e) {
-        return [
-            'status' => 'error',
-            'message' => 'DB connection failed',
-            'error' => $e->getMessage(),
-        ];
+function getDbConnection(): PDO
+{
+    static $pdo = null;
+    if ($pdo !== null) {
+        return $pdo;
     }
-};
 
-if ($path === '/health') {
-    $send(200, [
-        'service' => 'catalog',
-        'status' => 'ok',
-        'timestamp' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
+    $host = getenv('DB_HOST') ?: 'localhost';
+    $port = getenv('DB_PORT') ?: '5432';
+    $dbname = getenv('DB_NAME') ?: 'catalog_db';
+    $user = getenv('DB_USER') ?: 'catalog_user';
+    $password = getenv('DB_PASSWORD') ?: 'catalog_pass';
+
+    $dsn = "pgsql:host={$host};port={$port};dbname={$dbname}";
+
+    $pdo = new PDO($dsn, $user, $password, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
     ]);
+
+    return $pdo;
+}
+
+function initDatabase(): void
+{
+    $pdo = getDbConnection();
+
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS movies (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            genre VARCHAR(100),
+            duration INTEGER,
+            rating NUMERIC(3,1) DEFAULT 0,
+            year INTEGER,
+            age_rating VARCHAR(10),
+            image TEXT,
+            description TEXT,
+            synopsis TEXT,
+            director VARCHAR(255),
+            writer VARCHAR(255),
+            producer VARCHAR(255),
+            studio VARCHAR(255),
+            release_date VARCHAR(100),
+            budget VARCHAR(100),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ");
+}
+
+function jsonResponse(mixed $data, int $code = 200): void
+{
+    http_response_code($code);
+    echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$sampleFilms = [
-    [
-        'id' => 1,
-        'title' => 'Placeholder Film',
-        'duration' => 120,
-        'rating' => 'PG-13',
-        'director' => 'A. Director',
-        'description' => 'Seed data so that front-end devs can start.',
-        'posterUrl' => 'https://via.placeholder.com/300x450.png?text=Poster',
-        'posterRotationDeg' => 0,
-    ],
-];
-
-$routes = [
-    'GET' => [
-        '/films' => static fn () => $sampleFilms,
-        '/films/1' => static fn () => $sampleFilms[0],
-        '/hello' => static fn () => [
-            'status' => 'ok',
-            'message' => 'Hello World',
-        ],
-        '/db-test' => $dbTest,
-    ],
-];
-
-if (isset($routes[$method][$path])) {
-    $payload = $routes[$method][$path]();
-    $send(200, $payload);
-    exit;
+function getJsonBody(): array
+{
+    $raw = file_get_contents('php://input');
+    $data = json_decode($raw, true);
+    return is_array($data) ? $data : [];
 }
 
-$send(501, [
-    'message' => 'Catalog service skeleton. Implement business logic here.',
-    'method' => $method,
-    'path' => $path,
-]);
+/**
+ * Convert snake_case DB row to camelCase for the front-end
+ */
+function rowToCamel(array $row): array
+{
+    return [
+        'id'          => (int) $row['id'],
+        'title'       => $row['title'],
+        'genre'       => $row['genre'],
+        'duration'    => $row['duration'] !== null ? (int) $row['duration'] : null,
+        'rating'      => $row['rating'] !== null ? (float) $row['rating'] : null,
+        'year'        => $row['year'] !== null ? (int) $row['year'] : null,
+        'ageRating'   => $row['age_rating'],
+        'image'       => $row['image'],
+        'description' => $row['description'],
+        'synopsis'    => $row['synopsis'],
+        'director'    => $row['director'],
+        'writer'      => $row['writer'],
+        'producer'    => $row['producer'],
+        'studio'      => $row['studio'],
+        'releaseDate' => $row['release_date'],
+        'budget'      => $row['budget'],
+        'createdAt'   => $row['created_at'],
+        'updatedAt'   => $row['updated_at'],
+    ];
+}

@@ -22,7 +22,7 @@
         >
           <div 
             class="absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-            :style="{ backgroundImage: movie.poster ? `url('${movie.poster}')` : '' }"
+            :style="{ backgroundImage: movie.image ? `url('${movie.image}')` : '' }"
           ></div>
           <!-- Fond dégradé avec transparence -->
           <div class="absolute inset-0 bg-gradient-to-t from-dark-bg via-dark-bg/60 to-transparent group-hover:from-dark-bg/90 group-hover:via-dark-bg/70 transition-all"></div>

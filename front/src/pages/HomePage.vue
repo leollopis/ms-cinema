@@ -61,7 +61,7 @@
             >
               <div
                 class="absolute inset-0 w-full h-full"
-                :style="{ backgroundImage: `url('${movie.posterUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' }"
+                :style="{ backgroundImage: `url('${movie.image}')`, backgroundSize: 'cover', backgroundPosition: 'center' }"
               ></div>
               <!-- Overlay for details on hover -->
               <div class="absolute inset-0 bg-gradient-to-t from-dark-bg via-dark-bg/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -72,7 +72,7 @@
                   </h3>
                   <div class="mt-1">
                      <p class="text-sm text-muted-text">
-                      {{ movie.duration }} min • {{ movie.rating }}
+                      {{ movie.duration }} min • ⭐ {{ movie.rating }}
                     </p>
                   </div>
                 </div>
@@ -126,27 +126,25 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useMoviesStore } from '@/stores/movies.store'
 import Header from '@/components/common/Header.vue'
 import Footer from '@/components/common/Footer.vue'
 
 const router = useRouter()
+const moviesStore = useMoviesStore()
+const { movies } = storeToRefs(moviesStore)
+
 const goToMovie = (id) => router.push(`/film/${id}`)
 
-const featuredMovie = ref({
-  id: 1,
-  title: 'Le Gardien des Étoiles',
-  overview: "Dans un futur lointain, une jeune pilote découvre une ancienne relique qui pourrait sauver l'humanité d'une menace cosmique imminente.",
-  backdropUrl: 'https://picsum.photos/seed/cinemabackdrop/1920/1080',
-});
+// Show up to 6 popular movies from the real catalog
+const popularMovies = computed(() => movies.value.slice(0, 6))
 
-const popularMovies = ref([
-  { id: 1, title: 'Le Gardien des Étoiles', duration: 120, rating: 'PG-13', posterUrl: 'https://picsum.photos/seed/movie-1/400/600' },
-  { id: 2, title: 'Océan Bleu', duration: 102, rating: 'G', posterUrl: 'https://picsum.photos/seed/movie-2/400/600' },
-  { id: 3, title: 'Nocturne', duration: 116, rating: 'R', posterUrl: 'https://picsum.photos/seed/movie-3/400/600' },
-  { id: 4, title: 'Dernière Séance', duration: 98, rating: 'PG', posterUrl: 'https://picsum.photos/seed/movie-4/400/600' },
-  { id: 5, title: 'La Cité des Songes', duration: 145, rating: 'PG-13', posterUrl: 'https://picsum.photos/seed/movie-5/400/600' },
-  { id: 6, title: 'Écho du Temps', duration: 110, rating: 'PG', posterUrl: 'https://picsum.photos/seed/movie-6/400/600' },
-])
+onMounted(() => {
+  if (movies.value.length === 0) {
+    moviesStore.fetchMovies()
+  }
+})
 </script>
